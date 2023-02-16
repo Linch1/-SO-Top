@@ -1,4 +1,4 @@
-// Memory Function
+// Memory Struct and Function
 struct Memory{
     int Total;
     int Free;
@@ -13,8 +13,8 @@ struct Swap{
     int Used;
 };
 
-struct Memory getMemory();
-struct Swap getSwap();
+void getMemory(struct Memory* mem);
+void getSwap(struct Swap* swap);
 
 // Process Function 
 void h();

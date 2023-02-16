@@ -45,37 +45,36 @@ void s(int pid){
 
 //Memory Function
 
-struct Memory getMemory(){
-    struct Memory mem;
+void getMemory(struct Memory* mem){
+
     FILE *f=fopen("/proc/meminfo", "r");
 
     char buff[256];
     while(fgets(buff, sizeof(buff), f)){
-        if(sscanf(buff, "MemTotal: %d kB", &mem.Total) == 1) continue;
+        if(sscanf(buff, "MemTotal: %d kB", &mem->Total) == 1) continue;
         
-        if(sscanf(buff, "MemFree: %d kB", &mem.Free) == 1) continue;
+        if(sscanf(buff, "MemFree: %d kB", &mem->Free) == 1) continue;
 
-        if(sscanf(buff, "MemAvailable: %d kB", &mem.Avail) == 1)continue;       
+        if(sscanf(buff, "MemAvailable: %d kB", &mem->Avail) == 1)continue;       
         
-        if(sscanf(buff, "Cached: %d kB", &mem.Cache) == 1) break;
+        if(sscanf(buff, "Cached: %d kB", &mem->Cache) == 1) break;
     }
-    mem.Used=mem.Total-mem.Avail;
-    free(buff);
+    mem->Used = mem.Total - mem.Avail;
+    
     if(fclose(f) != 0) exit(-1);
 }
 
-struct Swap getSwap(){
-struct Memory swap;
+void getSwap(struct Swap* swap){
+
     FILE *f=fopen("/proc/meminfo", "r");
-    check_error(f,"fopen");
 
     char buff[256];
     while(fgets(buff, sizeof(buff), f)){
-        if(sscanf(buff, "SwapTotal: %d kB", &swap.Total) == 1) continue;
+        if(sscanf(buff, "SwapTotal: %d kB", &swap->Total) == 1) continue;
         
-        if(sscanf(buff, "SwapFree: %d kB", &swap.Free) == 1) break;
+        if(sscanf(buff, "SwapFree: %d kB", &swap->Free) == 1) break;
     }
-    swap.Used=swap.Total-swap.Free;
-    free(buff);
+    swap->Used = swap->Total - swap->Free;
+
     if(fclose(f) != 0) exit(-1);
 }
