@@ -6,6 +6,7 @@
 #include "./linked_list/linked_list.h";
 #include "./getPidStats.h";
 #include "./getRunningPids.h";
+#include "./function.h"
 #include<time.h>
 #include <unistd.h>
 
