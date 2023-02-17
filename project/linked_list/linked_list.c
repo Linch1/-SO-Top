@@ -21,7 +21,7 @@ ListItem* List_find(ListHead* head, ListItem* item) {
 
 ListItem* List_insert(ListHead* head, ListItem* prev, ListItem* item) {
   if (item->next || item->prev){
-    printf("INSIDE\n");
+    //printf("INSIDE\n");
     return 0;
   }
     

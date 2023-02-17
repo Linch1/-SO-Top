@@ -9,7 +9,7 @@
 static void check_error(long res, char* msg, int proc) {
     if (res != -1) printf("Process PID %d successed %s\n",proc, msg);
     switch (errno){
-    case EPERM: printf("you haven't permission to %s process PID %d\n", msg ,proc);
+    case EPERM: printf("you havent permission to %s process PID %d\n", msg ,proc);
     case ESRCH: printf("Process PID %d  not exist \n",proc);
     }
 }
@@ -25,22 +25,22 @@ void h(){
 
 void t(int pid){
     int res=kill(pid,SIGTERM);
-    check_error(res,'Terminate',pid);
+    check_error(res,"terminate",pid);
 }
 
 void k(int pid){
     int res=kill(pid,SIGKILL);
-    check_error(res,'Kill',pid);
+    check_error(res,"kill",pid);
 }
 
 void r(int pid){
     int res=kill(pid,SIGCONT);
-    check_error(res,'resume',pid);
+    check_error(res,"resume",pid);
 }
 
-void s(int pid){
+void su(int pid){
     int res=kill(pid,SIGSTOP);
-    check_error(res,'suspend',pid);
+    check_error(res,"suspend",pid);
 }
 
 //Memory Function
@@ -59,7 +59,7 @@ void getMemory(struct Memory* mem){
         
         if(sscanf(buff, "Cached: %d kB", &mem->Cache) == 1) break;
     }
-    mem->Used = mem.Total - mem.Avail;
+    mem->Used = mem->Total - mem->Avail;
     
     if(fclose(f) != 0) exit(-1);
 }

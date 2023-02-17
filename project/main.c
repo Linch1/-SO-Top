@@ -6,7 +6,7 @@
 #include "./linked_list/linked_list.h";
 #include "./getPidStats.h";
 #include "./getRunningPids.h";
-#include "./function.h"
+#include "function.h"
 #include<time.h>
 #include <unistd.h>
 
@@ -16,9 +16,9 @@ int main(void){
 
     ListHead headStats; 
     List_init(&headStats); // inzializza lista stati (prec|corrente) dei vari processi
-    
+    char i=0;
 
-    while( 1 ) {
+    while( i==0 ) {
 
         fflush(NULL); // clear console
 
@@ -33,8 +33,8 @@ int main(void){
 
         Swap swap;
         getSwap(&swap);
-
-        while(aux){
+        
+        while(aux && i==0){
             PidListItem* element = (PidListItem*) aux;
 
             PidStatListItem* s = PidListStat_find( &headStats, element->pid);
@@ -54,37 +54,37 @@ int main(void){
             double usage;
             calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
             printf("%d %%cpu: %.02f\n", element->pid, usage);
-                        
 
-            aux=aux->next;
-        }
-        printf("MemTotal: %d\nMemFree: %d\nMemAvailable: %d\nCached: %d\nMemUsed: %d\nSwapTotal: %d\nSwapFree: %d\nSwapUsed: %d\n",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
-        //primo abbozzo di interazione con i processi
-        while(1){
+            printf("MemTotal: %d\nMemFree: %d\nMemAvailable: %d\nCached: %d\nMemUsed: %d\nSwapTotal: %d\nSwapFree: %d\nSwapUsed: %d\n",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
+            printf("\n");
             printf("Inserisci nel terminale la funzione da eseguire seguita dal process Id:\n");
             printf("\n");
             printf("Premendo h potrai vedere le funzioni eseguibili\n");
             printf("Premendo q potrai terminare il programma\n");
-            printf("Digita: ")
-            char *fun;
-            int *pid;
-            scanf("%s %d",fun, pid);
+            printf("Digita: ");
+            char fun;
+            int pid;
+            scanf("%c %d",&fun, &pid);
             switch (fun)
             {
-            case h: h();
-            case t: t(pid);
-            case k: k(pid);
-            case r: r(pid);
-            case s: s(pid);
-            case q: break;
-            default:  printf("carattere non riconosciuto\n");
-                      continue;
-                     
+                case 'h': h();
+                    break;
+                case 't': t(pid);
+                    break;
+                case 'k': k(pid);
+                    break;
+                case 'r': r(pid);
+                  break;
+                case 's': su(pid);
+                    break;
+                case 'q':
+                    i=1;
+                    break;
             }
-            free(fun);
+            getMemory(&mem);
+            getSwap(&swap);
+            aux=aux->next;
         }
-        free(mem);
-        free(swap);
         List_free( &head );
         
         sleep( SLEEP_INTERVAL );
