@@ -1,3 +1,5 @@
+#include "./pid_info.h";
+
 typedef struct Memory{
     int Total;
     int Free;

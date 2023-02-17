@@ -104,15 +104,19 @@ int getPidStats(const pid_t pid, struct pstat* result) {
     //read values from /proc/pid/stat
     bzero(result, sizeof(struct pstat));
     long int rss;
-    if (fscanf(fpstat, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu"
-                "%lu %ld %ld %*d %*d %*d %*d %lu %lu %ld",
+    if (fscanf(fpstat, 
+                "%*d %s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u "
+                "%lu %lu %ld %ld %d %d %*d %*d %lu %lu %ld",
+                &result->procName,
                 &result->utime_ticks, &result->stime_ticks,
-                &result->cutime_ticks, &result->start_time_ticks, &result->cstime_ticks, &result->vsize,
+                &result->cutime_ticks, &result->cstime_ticks, &result->priority, &result->nice, &result->start_time_ticks, &result->vsize,
                 &rss) == EOF) {
         fclose(fpstat);
         return -1;
     }
     fclose(fpstat);
+
+    
     result->rss = rss * getpagesize();
 
     //read+calc cpu total time from /proc/stat
