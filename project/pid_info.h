@@ -1,5 +1,6 @@
 #pragma once
 #include <sys/types.h>
+#include "./linked_list/linked_list.h";
 #define SLEEP_INTERVAL 1
 
 typedef struct pstat {
@@ -15,4 +16,23 @@ typedef struct pstat {
     long unsigned int start_time_ticks; // orario di avvio processo
 } pstat;
 
-int getPidStats(const pid_t pid, struct pstat* result);
+typedef struct PidStat {
+    pstat current;
+    pstat prev;
+} PidStat;
+typedef struct PidListItem{
+  ListItem list;
+  pid_t pid;
+} PidListItem;
+typedef struct PidStatListItem{
+  ListItem list;
+  pid_t pid;
+  PidStat stat;
+} PidStatListItem;
+
+
+void PidList_print(ListHead* head);
+PidStatListItem* PidListStat_find(ListHead* head, pid_t pid);
+int is_pid_dir(const struct dirent *entry) ;
+int getRunningPids( ListHead* head );
+PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid );
