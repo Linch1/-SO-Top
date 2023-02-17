@@ -4,27 +4,9 @@
 #include <ctype.h>
 #include <assert.h>
 #include "./linked_list/linked_list.h";
-#include "./getPidStats.h";
+#include "./pid_info.h";
 #include<time.h>
 #include <unistd.h>
-
-#define SC_CLK_TCK 2
-typedef struct PidStat {
-    pstat current;
-    pstat prev;
-} PidStat;
-
-
-typedef struct PidListItem{
-  ListItem list;
-  pid_t pid;
-} PidListItem;
-
-typedef struct PidStatListItem{
-  ListItem list;
-  pid_t pid;
-  PidStat stat;
-} PidStatListItem;
 
 
 void PidList_print(ListHead* head){
@@ -47,8 +29,6 @@ PidStatListItem* PidListStat_find(ListHead* head, pid_t pid){
   return NULL;
 }
 
-
-// Helper function to check if a struct dirent from /proc is a PID directory.
 int is_pid_dir(const struct dirent *entry) {
     const char *p;
 
@@ -59,7 +39,6 @@ int is_pid_dir(const struct dirent *entry) {
 
     return 1;
 }
-
 int getRunningPids( ListHead* head ) {
     DIR *procdir;
     FILE *fp;
@@ -117,25 +96,6 @@ int getRunningPids( ListHead* head ) {
 
     closedir(procdir);
     return 0;
-}
-
-float getSystemUptimeSec(){
-    // Try to open /proc/uptime.
-    char path = "/proc/uptime"; 
-    float uptime_sec, b;
-    FILE *fp = fopen("/proc/uptime", "r");
-    fscanf(fp, "%f %f", &uptime_sec, &b);
-    return uptime_sec;
-}
-float getTotalCpuUsage( float uptime_sec, pstat stat ){
-    float total_time = stat.utime_ticks + stat.stime_ticks; // time_spent_in_user_mode + time_spent_in_kernel_mode from process
-    total_time+= stat.cutime_ticks + stat.cstime_ticks; // time spent in cpu from children processes
-
-    long CLOCKS = sysconf(SC_CLK_TCK);
-
-    float process_run_for_seconds = uptime_sec - (stat.start_time_ticks/CLOCKS);
-    float cpu_usage = 100 * ( (total_time / CLOCKS) / process_run_for_seconds );
-    return cpu_usage;
 }
 
 PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid ){
