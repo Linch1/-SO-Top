@@ -15,32 +15,30 @@ static void check_error(long res, char* msg, int proc) {
 }
 
 void h(){
+    printf("\n");
     printf("s: suspend\n");
     printf("r: resume\n");
     printf("t: terminate\n");
     printf("k: kill\n");
     printf("u: reload\n");
     printf("q: quit\n");
+    printf("\n");
 }
 
 void t(int pid){
-    int res=kill(pid,SIGTERM);
-    check_error(res,"terminate",pid);
+    check_error(kill(pid,SIGTERM),"terminate",pid);
 }
 
 void k(int pid){
-    int res=kill(pid,SIGKILL);
-    check_error(res,"kill",pid);
+    check_error(kill(pid,SIGKILL),"kill",pid);
 }
 
 void r(int pid){
-    int res=kill(pid,SIGCONT);
-    check_error(res,"resume",pid);
+    check_error(kill(pid,SIGCONT),"resume",pid);
 }
 
 void su(int pid){
-    int res=kill(pid,SIGSTOP);
-    check_error(res,"suspend",pid);
+    check_error(kill(pid,SIGSTOP),"suspend",pid);
 }
 
 //Memory Function
