@@ -1,8 +1,8 @@
 
 // Process Function 
-void h();
-void t(int pid);
-void k(int pid);
-void r(int pid);
-void su(int pid);
+void h(WINDOW* win);
+void t(WINDOW* win,int pid);
+void k(WINDOW* win,int pid);
+void r(WINDOW* win,int pid);
+void su(WINDOW* win,int pid);
 

@@ -1,4 +1,4 @@
-#include "./pid_info.h";
+#include "pid_info.h"
 
 typedef struct Memory{
     int Total;

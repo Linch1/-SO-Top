@@ -1,11 +1,12 @@
 #include <sys/types.h>
 #include <dirent.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
-#include "./linked_list/linked_list.h";
-#include "./pid_info.h";
-#include<time.h>
+#include "linked_list/linked_list.h"
+#include "pid_info.h"
+#include <time.h>
 #include <unistd.h>
 
 

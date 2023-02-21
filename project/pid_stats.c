@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
-#include "./pid_info.h";
-#include "./pid_stats.h";
-#include<time.h>
+#include "pid_info.h"
+#include "pid_stats.h"
+#include <time.h>
 #include <unistd.h>
 #define SC_CLK_TCK 2
 

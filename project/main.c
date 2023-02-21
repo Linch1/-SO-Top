@@ -1,110 +1,155 @@
+#include <ncurses.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
-#include "./linked_list/linked_list.h";
-#include "./pid_stats.h";
-#include "./pid_info.h";
-#include "./pid_cmd.h";
-#include<time.h>
-#include <unistd.h>
+#include <pthread.h>
+#include "linked_list.h"
+#include "pid_stats.h"
+#include "pid_info.h"
+#include "pid_cmd.h"
+#include <sys/ioctl.h>
 
-char i=0;
 
-void pid_cmd_prompt(){
-    char fun;
-    int pid;
-    scanf("%c %d",&fun, &pid);
-    switch (fun)
-    {
-        case 'h': h();
-            break;
-        case 't': t(pid);
-            break;
-        case 'k': k(pid);
-            break;
-        case 'r': r(pid);
-            break;
-        case 's': su(pid);
-            break;
-        case 'q':
-            exit(0);
-            break;
-    }
+
+#define PROC_WIN_HEIGHT 20
+#define PROC_WIN_WIDTH 165
+#define CMD_WIN_HEIGHT 8
+#define CMD_WIN_WIDTH 165
+#define SLEEP_INTERVAL 5
+
+void resize_terminal() {
+    struct winsize ws;
+    ws.ws_col = 180;
+    ws.ws_row = 30;
+    ioctl(STDOUT_FILENO, TIOCSWINSZ, &ws);
 }
 
-void system_info(){
-    Memory mem;
-    getMemory(&mem); 
-    Swap swap;
-    getSwap(&swap);
-
-    printf("MemTotal: %d\nMemFree: %d\nMemAvailable: %d\nCached: %d\nMemUsed: %d\nSwapTotal: %d\nSwapFree: %d\nSwapUsed: %d\n",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
-    printf("\n");
-    printf("Inserisci nel terminale la funzione da eseguire seguita dal process Id:\n");
-    printf("\n");
-    printf("Premendo h potrai vedere le funzioni eseguibili\n");
-    printf("Premendo q potrai terminare il programma\n");
-    //printf("Digita: ");
-}
-
-int main(void){
-
+void draw_proc_window(WINDOW* win2){
     float uptime_sec = getSystemUptimeSec(); // secondi di uptime del pc
 
     ListHead headStats; 
     List_init(&headStats); // inzializza lista stati (prec|corrente) dei vari processi
-    
-
-    while( i==0 ) {
-
-        system("clear");
+    int cnt=5,i=0;
+    Memory mem;
+    Swap swap;
+    while(i==0){
         ListHead head;
         List_init(&head); // inzializza lista pid processi running
-
         getRunningPids(&head); // popola la lista con tutti i processi running
         ListItem* aux= head.first;
-
-        
-        system_info(); // print system info
-
-        printf("  PID       |      CPU      |      MEM      |    PRIO    |   NICE    |      NAME     \n");
-        printf("-------------------------------------------------------------------------------------\n");
-        while(aux && i==0){
+        scrollok(win2,TRUE);
+        while(aux) {
+            if(cnt>18) cnt=5;
             PidListItem* element = (PidListItem*) aux;
 
-            PidStatListItem* s = PidListStat_find( &headStats, element->pid);
+            PidStatListItem* s = PidListStat_find(&headStats, element->pid);
 
-            if( s == NULL ){ // collect process stats for first time and add to linked list;
-                s = intializeProcessStats( &headStats, element->pid );
+            if(s == NULL) {
+                s = intializeProcessStats(&headStats, element->pid);
                 continue;
-            }
-            else {
+            } else {
                 pstat stat;
-                getPidStats( element->pid, &stat );
+                getPidStats(element->pid, &stat);
                 s->stat.prev = s->stat.current;
                 s->stat.current = stat;
             }
-            
-            double usage;
-            calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
-           
-            printf("%5d             ", element->pid);
-            printf("%.02f           ", usage);
-            printf("   --           ");
-            printf("%3i         ", s->stat.current.priority);
-            printf("%3i             ", s->stat.current.nice); 
-            printf("%-20s       ", s->stat.current.procName );
-          
-            printf("\n");
 
-            aux=aux->next;
+            double usage;
+            getMemory(&mem); //popola la struct mem
+
+            getSwap(&swap);//popola la struct swap
+
+            calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
+
+
+            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
+
+            mvwprintw(win2,3,25, " PID       |      CPU      |      MEM      |    PRIO    |   NICE    |      NAME     ");
+
+
+            mvwprintw(win2,cnt,25, "%5d            %.02f              --            %3i         %3i           %-20s       ", element->pid, usage, s->stat.current.priority, s->stat.current.nice, s->stat.current.procName);
+
+            aux = aux->next;
+
+            cnt++;
+
         }
-        List_free( &head );
         sleep( SLEEP_INTERVAL );
+        scrollok(win2,FALSE);
+        wrefresh(win2);
+
+        List_free( &head );
     }
 
+}
+void draw_cmd_window(WINDOW* win3) {
+    char fun;
+    int pid;
+    while(1){
+    mvwprintw(win3,1,1,"Inserisci nel terminale la funzione da eseguire seguita dal process Id:");
+
+    mvwprintw(win3,2,1,"Premendo h potrai vedere le funzioni eseguibili");
+
+    mvwprintw(win3,3,1,"Premendo q potrai uscire dal programma");
+
+
+    echo();
+    wmove(win3, 4, 1);
+    wclrtoeol(win3);
+    wmove(win3,4,1);
+    wscanw(win3, "%c %d", &fun, &pid);
+    switch (fun)
+    {
+        case 'h': h(win3);
+            break;
+        case 't': t(win3,pid);
+            break;
+        case 'k': k(win3,pid);
+            break;
+        case 'r': r(win3,pid);
+            break;
+        case 's': su(win3,pid);
+            break;
+        case 'q':
+            system("clear");
+            exit(0);
+            break;
+    }
+    }
+}
+
+
+int main() {
+    initscr();
+    noecho();
+    cbreak();
+    resize_terminal();
     
+
+    // create info window
+    WINDOW* proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH,0, 0);
+    WINDOW* cmd = newwin(CMD_WIN_HEIGHT,CMD_WIN_WIDTH,PROC_WIN_HEIGHT ,0);
+
+    box(proc,0,0);
+    box(cmd,0,0);
+
+    
+    wrefresh(proc);
+    wrefresh(cmd);
+
+    // create threads for info window, process window, and command windowq
+    pthread_t proc_thread, cmd_thread;
+    
+    pthread_create(&proc_thread, NULL,(void*) draw_proc_window,(void*) proc);
+    pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window,(void*) cmd);
+
+    // wait for threads to finish
+    pthread_join(cmd_thread, NULL);
+
+    endwin();
+    return 0;
 }

@@ -1,3 +1,4 @@
+#include <ncurses.h>
 #include "pid_cmd.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,39 +6,48 @@
 #include <signal.h>
 #include <errno.h>
 
+
 //Process Function
-static void check_error(long res, char* msg, int proc) {
-    if (res != -1) printf("Process PID %d successed %s\n",proc, msg);
-    switch (errno){
-    case EPERM: printf("you havent permission to %s process PID %d\n", msg ,proc);
-    case ESRCH: printf("Process PID %d  not exist \n",proc);
+static void check_error(WINDOW* win,long res, char* msg, int proc) {
+    if (res != -1) {
+        mvwprintw(win,5,1,"Il Processo PID( %d ) %s con successo",proc, msg);
+    }else{
+        switch (errno){
+                case EPERM: {wmove(win, 5, 1);
+                             wclrtoeol(win);
+                             mvwprintw(win,5,1,"Non hai il permesso di %s il processo PID( %d )", msg ,proc); 
+                             break;}
+                case ESRCH: {wmove(win, 5, 1);
+                             wclrtoeol(win);
+                             mvwprintw(win,5,1,"Il Processo PID( %d ) non esiste ",proc);
+                             break;}
+        }
     }
 }
 
-void h(){
-    printf("\n");
-    printf("s: suspend\n");
-    printf("r: resume\n");
-    printf("t: terminate\n");
-    printf("k: kill\n");
-    printf("u: reload\n");
-    printf("q: quit\n");
-    printf("\n");
+void h(WINDOW* win){
+    wrefresh(win);
+    wmove(win, 5, 1);
+    wclrtoeol(win);
+    mvwprintw(win,5,1,"s: suspend  ||  r: resume || t: terminate || k: kill || q: quit");
+    wmove(win, 6, 1);
+    wclrtoeol(win);
 }
 
-void t(int pid){
-    check_error(kill(pid,SIGTERM),"terminate",pid);
+void t(WINDOW* win,int pid){
+    check_error(win,kill(pid,SIGTERM),"terminate",pid);
 }
 
-void k(int pid){
-    check_error(kill(pid,SIGKILL),"kill",pid);
+void k(WINDOW* win,int pid){
+    check_error(win,kill(pid,SIGKILL),"kill",pid);
 }
 
-void r(int pid){
-    check_error(kill(pid,SIGCONT),"resume",pid);
+void r(WINDOW* win,int pid){
+    check_error(win,kill(pid,SIGCONT),"resume",pid);
 }
 
-void su(int pid){
-    check_error(kill(pid,SIGSTOP),"suspend",pid);
+void su(WINDOW* win,int pid){
+    check_error(win,kill(pid,SIGSTOP),"suspend",pid);
 }
+
 

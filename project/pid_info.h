@@ -1,6 +1,6 @@
 #pragma once
 #include <sys/types.h>
-#include "./linked_list/linked_list.h";
+#include "linked_list.h"
 #define SLEEP_INTERVAL 5
 
 typedef struct pstat {
