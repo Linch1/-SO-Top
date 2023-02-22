@@ -9,17 +9,27 @@
 
 //Process Function
 static void check_error(WINDOW* win,long res, char* msg, int proc) {
+    //COLORI PER LE RISPOSTE
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+
     if (res != -1) {
-        mvwprintw(win,5,1,"Il Processo PID( %d ) %s con successo",proc, msg);
+        wattron(win,COLOR_PAIR(2));
+        mvwprintw(win,5,1," Il Processo PID( %d ) %s con successo",proc, msg);
+        wattroff(win,COLOR_PAIR(2));
     }else{
         switch (errno){
                 case EPERM: {wmove(win, 5, 1);
                              wclrtoeol(win);
-                             mvwprintw(win,5,1,"Non hai il permesso di %s il processo PID( %d )", msg ,proc); 
+                             wattron(win,COLOR_PAIR(1));
+                             mvwprintw(win,5,1,"Non hai il permesso di %s il processo PID( %d ) ", msg ,proc);
+                             wattroff(win,COLOR_PAIR(1)); 
                              break;}
                 case ESRCH: {wmove(win, 5, 1);
                              wclrtoeol(win);
+                             wattron(win,COLOR_PAIR(1));
                              mvwprintw(win,5,1,"Il Processo PID( %d ) non esiste ",proc);
+                             wattroff(win,COLOR_PAIR(1));
                              break;}
         }
     }

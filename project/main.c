@@ -21,12 +21,6 @@
 #define CMD_WIN_WIDTH 165
 #define SLEEP_INTERVAL 5
 
-void resize_terminal() {
-    struct winsize ws;
-    ws.ws_col = 180;
-    ws.ws_row = 30;
-    ioctl(STDOUT_FILENO, TIOCSWINSZ, &ws);
-}
 
 void draw_proc_window(WINDOW* win2){
     float uptime_sec = getSystemUptimeSec(); // secondi di uptime del pc
@@ -36,6 +30,7 @@ void draw_proc_window(WINDOW* win2){
     int cnt=5,i=0;
     Memory mem;
     Swap swap;
+    
     while(i==0){
         ListHead head;
         List_init(&head); // inzializza lista pid processi running
@@ -65,11 +60,15 @@ void draw_proc_window(WINDOW* win2){
 
             calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
 
+            init_pair(1, COLOR_GREEN, COLOR_BLACK); //COLORI PER MESSAGGIO STATICO
+            
+            wattron(win2,COLOR_PAIR(1));
 
-            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
+            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d ",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
 
             mvwprintw(win2,3,25, " PID       |      CPU      |      MEM      |    PRIO    |   NICE    |      NAME     ");
 
+            wattroff(win2,COLOR_PAIR(1));
 
             mvwprintw(win2,cnt,25, "%5d            %.02f              --            %3i         %3i           %-20s       ", element->pid, usage, s->stat.current.priority, s->stat.current.nice, s->stat.current.procName);
 
@@ -87,15 +86,18 @@ void draw_proc_window(WINDOW* win2){
 
 }
 void draw_cmd_window(WINDOW* win3) {
+    
+    init_pair(1,COLOR_GREEN, COLOR_BLACK);  //COLORI PER MESSAGGIO STATICO
+
     char fun;
     int pid;
+    
     while(1){
-    mvwprintw(win3,1,1,"Inserisci nel terminale la funzione da eseguire seguita dal process Id:");
-
-    mvwprintw(win3,2,1,"Premendo h potrai vedere le funzioni eseguibili");
-
-    mvwprintw(win3,3,1,"Premendo q potrai uscire dal programma");
-
+    wattron(win3,COLOR_PAIR(1));
+    mvwprintw(win3,1,1," Inserisci nel terminale la funzione da eseguire seguita dal process Id:");
+    mvwprintw(win3,2,1," Premendo h potrai vedere le funzioni eseguibili");
+    mvwprintw(win3,3,1," Premendo q potrai uscire dal programma");
+    wattroff(win3,COLOR_PAIR(1));
 
     echo();
     wmove(win3, 4, 1);
@@ -127,8 +129,7 @@ int main() {
     initscr();
     noecho();
     cbreak();
-    resize_terminal();
-    
+    start_color();
 
     // create info window
     WINDOW* proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH,0, 0);
