@@ -19,15 +19,17 @@
 #define PROC_WIN_WIDTH 165
 #define CMD_WIN_HEIGHT 8
 #define CMD_WIN_WIDTH 165
-#define SLEEP_INTERVAL 5
+#define SLEEP_INTERVAL 1
 
-void resize_terminal() {
-    struct winsize ws;
-    ws.ws_col = 180;
-    ws.ws_row = 30;
-    ioctl(STDOUT_FILENO, TIOCSWINSZ, &ws);
+void PidListfree(ListHead* head) {
+  ListItem* aux=head->first;
+  while(aux){
+    ListItem* tmp = aux->next;
+    free(((PidListItem*)aux)->name);
+    free(aux);
+    aux = tmp;
+  }
 }
-
 void draw_proc_window(WINDOW* win2){
     float uptime_sec = getSystemUptimeSec(); // secondi di uptime del pc
 
@@ -36,6 +38,7 @@ void draw_proc_window(WINDOW* win2){
     int cnt=5,i=0;
     Memory mem;
     Swap swap;
+    
     while(i==0){
         ListHead head;
         List_init(&head); // inzializza lista pid processi running
@@ -65,9 +68,21 @@ void draw_proc_window(WINDOW* win2){
 
             calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
 
-            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
-            mvwprintw(win2,3,25, " PID       |      CPU      |      MEM      |    PRIO    |   NICE    |      NAME     ");
-            mvwprintw(win2,cnt,25, "%5d            %.02f              --            %3i         %3i           %-20s       ", element->pid, usage, s->stat.current.priority, s->stat.current.nice, s->stat.current.procName);
+
+            init_pair(1, COLOR_GREEN, COLOR_BLACK); //COLORI PER MESSAGGIO STATICO
+            
+            wattron(win2,COLOR_PAIR(1));
+
+            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d ",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
+
+            mvwprintw(win2,3,25, " PID       |      CPU        |        MEM         |    PRIO      |   NICE      |      NAME     ");
+
+            wattroff(win2,COLOR_PAIR(1));
+
+            mvwprintw(win2,cnt,25, 
+                    "%5d            %.02f               %6.02f             %3i           %3i           %-35s       ", 
+                    element->pid, usage, s->stat.current.ramUsage, s->stat.current.priority, s->stat.current.nice, element->name
+            );
 
             aux = aux->next;
 
@@ -78,20 +93,23 @@ void draw_proc_window(WINDOW* win2){
         scrollok(win2,FALSE);
         wrefresh(win2);
 
-        List_free( &head );
+        PidListfree( &head );
     }
 
 }
 void draw_cmd_window(WINDOW* win3) {
+    
+    init_pair(1,COLOR_GREEN, COLOR_BLACK);  //COLORI PER MESSAGGIO STATICO
+
     char fun;
     int pid;
+    
     while(1){
-    mvwprintw(win3,1,1,"Inserisci nel terminale la funzione da eseguire seguita dal process Id:");
-
-    mvwprintw(win3,2,1,"Premendo h potrai vedere le funzioni eseguibili");
-
-    mvwprintw(win3,3,1,"Premendo q potrai uscire dal programma");
-
+    wattron(win3,COLOR_PAIR(1));
+    mvwprintw(win3,1,1," Inserisci nel terminale la funzione da eseguire seguita dal process Id:");
+    mvwprintw(win3,2,1," Premendo h potrai vedere le funzioni eseguibili");
+    mvwprintw(win3,3,1," Premendo q potrai uscire dal programma");
+    wattroff(win3,COLOR_PAIR(1));
 
     echo();
     wmove(win3, 4, 1);
@@ -127,14 +145,14 @@ int main() {
     noecho();
     keypad(stdscr, TRUE);
     mousemask(ALL_MOUSE_EVENTS, NULL);
-    resize_terminal();
+    start_color();
+    
 
-    
-    
 
     // create info window
-    WINDOW* proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH,0, 0);
-    WINDOW* cmd = newwin(CMD_WIN_HEIGHT,CMD_WIN_WIDTH,PROC_WIN_HEIGHT ,0);
+    WINDOW* cmd = newwin(CMD_WIN_HEIGHT,CMD_WIN_WIDTH,0 ,0);
+    WINDOW* proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH,8, 0);
+   
 
     box(proc,0,0);
     box(cmd,0,0);
@@ -153,22 +171,22 @@ int main() {
     pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window,(void*) cmd);
 
     // Handle mouse events
-    MEVENT event;
-    while (1) {
-        int ch = getch();
-        if (ch == KEY_MOUSE) {
-            if (getmouse(&event) == OK) {
-                if (event.bstate & BUTTON4_PRESSED) {
-                    // Scroll up
-                    wscrl(proc, -1);
-                } else if (event.bstate & BUTTON5_PRESSED) {
-                    // Scroll down
-                    wscrl(proc, 1);
-                }
-                wrefresh(proc);
-            }
-        }
-    }
+    // MEVENT event;
+    // while (1) {
+    //     int ch = getch();
+    //     if (ch == KEY_MOUSE) {
+    //         if (getmouse(&event) == OK) {
+    //             if (event.bstate & BUTTON4_PRESSED) {
+    //                 // Scroll up
+    //                 wscrl(proc, -1);
+    //             } else if (event.bstate & BUTTON5_PRESSED) {
+    //                 // Scroll down
+    //                 wscrl(proc, 1);
+    //             }
+    //             wrefresh(proc);
+    //         }
+    //     }
+    // }
 
 
     // wait for threads to finish

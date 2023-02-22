@@ -78,12 +78,18 @@ int getRunningPids( ListHead* head ) {
             &pid, &path, &maj_faults
         );
 
+
+        char * process_name = (char *)calloc(256, sizeof(char));
+        strcpy(process_name, path);
+
+
         PidListItem* new_element= (PidListItem*) calloc(1, sizeof(PidListItem));
         if (! new_element) {
             printf("out of memory\n");
             break;
         }
         new_element->pid = pid;
+        new_element->name = process_name;
         
         ListItem* result= List_insert(head, head -> last, (ListItem*) new_element);
         assert(result);
@@ -105,7 +111,7 @@ PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid ){
 
 
     PidStat* new_stat= (PidStat*)
-    malloc(sizeof(PidStat));
+    malloc( sizeof(PidStat) );
     new_stat->current = stat;
 
 

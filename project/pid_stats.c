@@ -75,32 +75,28 @@ void printPidStats( struct pstat stats ){
     );
 }
 
-char* getProcName( const pid_t pid ){
-    char status_path[256];
-    snprintf(status_path, sizeof(status_path), "/proc/%d/status", pid);
-    FILE *fp = fopen(status_path, "r");
-    if (fp == NULL) {
-        printf("Error: could not open file %s\n", status_path);
-        return 1;
+
+float getRamUsage(long proc_rss) {
+   
+
+    // get total memoory
+    long sys_mem_total;
+    FILE *fp = fopen("/proc/meminfo", "r");
+    char buffer[256];
+    int matched_meminfo = 0;
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        if (sscanf(buffer, "MemTotal: %ld kB", &sys_mem_total) == 1) {
+            break;
+        }
     }
-
-    char name[256];
-    int matched_fields = fscanf(fp, "Name:\t%s\n", name);
-    if (matched_fields != 1) {
-        printf("Error: could not read name from file %s\n", status_path);
-    }
-
-
     fclose(fp);
 
-    char *name_buffer = calloc(strlen(name) + 1, sizeof(char));
-    if (name_buffer == NULL) {
-        printf("Error: could not allocate memory\n");
-    }
-    strcpy(name_buffer, name);
+    // Calculate the RAM usage percentage
+    float ram_usage = (float) proc_rss / (float) sys_mem_total * 100.0f;
 
-    return name_buffer;
+    return ram_usage;
 }
+
 /*
  * read /proc data into the passed struct pstat
  * returns 0 on success, -1 on error
@@ -141,8 +137,8 @@ int getPidStats(const pid_t pid, struct pstat* result) {
     }
     fclose(fpstat);
 
-    result->procName = getProcName( pid );
     result->rss = rss * getpagesize();
+    result->ramUsage = getRamUsage(result->rss);
 
     //read+calc cpu total time from /proc/stat
     long unsigned int cpu_time[10];
@@ -162,4 +158,5 @@ int getPidStats(const pid_t pid, struct pstat* result) {
 
     return 0;
 }
+
 

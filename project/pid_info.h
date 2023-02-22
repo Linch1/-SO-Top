@@ -7,12 +7,12 @@ typedef struct pstat {
     long unsigned int utime_ticks; // tempo speso in ambiente utente
     long int cutime_ticks; // tempo speso in ambiente kernel
 
-    char* procName;
-    
     long unsigned int stime_ticks; // tempo speso in ambiente utente dai child processo
     long int cstime_ticks;// tempo speso in ambiente kernel dai child processo
     long unsigned int vsize; // virtual memory size in bytes
     long unsigned int rss; // Resident  Set  Size in bytes
+
+    float ramUsage;
     int priority;
     int nice;
     long unsigned int cpu_total_time; //
@@ -26,6 +26,7 @@ typedef struct PidStat {
 typedef struct PidListItem{
   ListItem list;
   pid_t pid;
+  char* name;
 } PidListItem;
 typedef struct PidStatListItem{
   ListItem list;
