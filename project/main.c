@@ -65,12 +65,8 @@ void draw_proc_window(WINDOW* win2){
 
             calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
 
-
             mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
-
             mvwprintw(win2,3,25, " PID       |      CPU      |      MEM      |    PRIO    |   NICE    |      NAME     ");
-
-
             mvwprintw(win2,cnt,25, "%5d            %.02f              --            %3i         %3i           %-20s       ", element->pid, usage, s->stat.current.priority, s->stat.current.nice, s->stat.current.procName);
 
             aux = aux->next;
@@ -124,10 +120,16 @@ void draw_cmd_window(WINDOW* win3) {
 
 
 int main() {
+
+    // Initialize ncurses
     initscr();
-    noecho();
     cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    mousemask(ALL_MOUSE_EVENTS, NULL);
     resize_terminal();
+
+    
     
 
     // create info window
@@ -141,14 +143,39 @@ int main() {
     wrefresh(proc);
     wrefresh(cmd);
 
+    // Enable scrolling on proc window
+    scrollok(proc, TRUE);
+
     // create threads for info window, process window, and command windowq
     pthread_t proc_thread, cmd_thread;
     
     pthread_create(&proc_thread, NULL,(void*) draw_proc_window,(void*) proc);
     pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window,(void*) cmd);
 
+    // Handle mouse events
+    MEVENT event;
+    while (1) {
+        int ch = getch();
+        if (ch == KEY_MOUSE) {
+            if (getmouse(&event) == OK) {
+                if (event.bstate & BUTTON4_PRESSED) {
+                    // Scroll up
+                    wscrl(proc, -1);
+                } else if (event.bstate & BUTTON5_PRESSED) {
+                    // Scroll down
+                    wscrl(proc, 1);
+                }
+                wrefresh(proc);
+            }
+        }
+    }
+
+
     // wait for threads to finish
     pthread_join(cmd_thread, NULL);
+
+
+   
 
     endwin();
     return 0;

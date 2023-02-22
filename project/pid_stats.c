@@ -75,6 +75,32 @@ void printPidStats( struct pstat stats ){
     );
 }
 
+char* getProcName( const pid_t pid ){
+    char status_path[256];
+    snprintf(status_path, sizeof(status_path), "/proc/%d/status", pid);
+    FILE *fp = fopen(status_path, "r");
+    if (fp == NULL) {
+        printf("Error: could not open file %s\n", status_path);
+        return 1;
+    }
+
+    char name[256];
+    int matched_fields = fscanf(fp, "Name:\t%s\n", name);
+    if (matched_fields != 1) {
+        printf("Error: could not read name from file %s\n", status_path);
+    }
+
+
+    fclose(fp);
+
+    char *name_buffer = calloc(strlen(name) + 1, sizeof(char));
+    if (name_buffer == NULL) {
+        printf("Error: could not allocate memory\n");
+    }
+    strcpy(name_buffer, name);
+
+    return name_buffer;
+}
 /*
  * read /proc data into the passed struct pstat
  * returns 0 on success, -1 on error
@@ -105,9 +131,8 @@ int getPidStats(const pid_t pid, struct pstat* result) {
     bzero(result, sizeof(struct pstat));
     long int rss;
     if (fscanf(fpstat, 
-                "%*d %s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u "
+                "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u "
                 "%lu %lu %ld %ld %d %d %*d %*d %lu %lu %ld",
-                &result->procName,
                 &result->utime_ticks, &result->stime_ticks,
                 &result->cutime_ticks, &result->cstime_ticks, &result->priority, &result->nice, &result->start_time_ticks, &result->vsize,
                 &rss) == EOF) {
@@ -116,7 +141,7 @@ int getPidStats(const pid_t pid, struct pstat* result) {
     }
     fclose(fpstat);
 
-    
+    result->procName = getProcName( pid );
     result->rss = rss * getpagesize();
 
     //read+calc cpu total time from /proc/stat
