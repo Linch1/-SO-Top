@@ -13,13 +13,25 @@
 #include "pid_cmd.h"
 #include <sys/ioctl.h>
 
-
-
+#define CMD_WIN_HEIGHT 10
+#define CMD_WIN_WIDTH 170
+#define PROC_WIN_HEAD_HEIGHT 4
+#define PROC_WIN_HEAD_WIDTH 170
 #define PROC_WIN_HEIGHT 20
-#define PROC_WIN_WIDTH 165
-#define CMD_WIN_HEIGHT 8
-#define CMD_WIN_WIDTH 165
-#define SLEEP_INTERVAL 1
+#define PROC_WIN_WIDTH 170
+
+#define SLEEP_INTERVAL 0.5
+
+
+WINDOW* cmd;
+WINDOW* proc_head;
+WINDOW* proc;
+pid_t CURRENT_PID = 1;
+int current_row = 0;
+int scroll_top = 0;
+int scroll_bot = PROC_WIN_HEIGHT - 1;
+
+
 
 void PidListfree(ListHead* head) {
   ListItem* aux=head->first;
@@ -30,25 +42,41 @@ void PidListfree(ListHead* head) {
     aux = tmp;
   }
 }
-void draw_proc_window(WINDOW* win2){
+void draw_proc_window(){
     float uptime_sec = getSystemUptimeSec(); // secondi di uptime del pc
 
     ListHead headStats; 
     List_init(&headStats); // inzializza lista stati (prec|corrente) dei vari processi
-    int cnt=5,i=0;
+    int row=5,i=0;
     Memory mem;
     Swap swap;
     
     while(i==0){
+
         ListHead head;
         List_init(&head); // inzializza lista pid processi running
         getRunningPids(&head); // popola la lista con tutti i processi running
         ListItem* aux= head.first;
-        scrollok(win2,TRUE);
-        while(aux) {
-            if(cnt>18) cnt=5;
-            PidListItem* element = (PidListItem*) aux;
+        //wclear(proc);
+        
 
+        init_pair(1, COLOR_GREEN, COLOR_BLACK); //COLORI PER MESSAGGIO STATICO
+        wattron(proc_head,COLOR_PAIR(1));
+        wclear(proc_head);
+        wprintw(
+            proc_head, 
+            "MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d \n", 
+            mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used
+        );
+        wprintw(proc_head, "N   | PID       |      CPU        |         MEM         |     PRIO      |    NICE      |      NAME     \n");
+        wattroff(proc_head,COLOR_PAIR(1));
+        wrefresh(proc_head);
+
+        werase(proc);
+        row=0;
+        while(aux) {
+            
+            PidListItem* element = (PidListItem*) aux;
             PidStatListItem* s = PidListStat_find(&headStats, element->pid);
 
             if(s == NULL) {
@@ -68,33 +96,26 @@ void draw_proc_window(WINDOW* win2){
 
             calc_cpu_usage_pct(&s->stat.current, &s->stat.prev, &usage);
 
-
-            init_pair(1, COLOR_GREEN, COLOR_BLACK); //COLORI PER MESSAGGIO STATICO
-            
-            wattron(win2,COLOR_PAIR(1));
-
-            mvwprintw(win2,1,1,"MemTotal: %d || MemFree: %d || MemAvailable: %d || Cached: %d || MemUsed: %d  || SwapTotal: %d || SwapFree: %d || SwapUsed: %d ",mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used);
-
-            mvwprintw(win2,3,25, " PID       |      CPU        |        MEM         |    PRIO      |   NICE      |      NAME     ");
-
-            wattroff(win2,COLOR_PAIR(1));
-
-            mvwprintw(win2,cnt,25, 
-                    "%5d            %.02f               %6.02f             %3i           %3i           %-35s       ", 
-                    element->pid, usage, s->stat.current.ramUsage, s->stat.current.priority, s->stat.current.nice, element->name
-            );
+            if ( row >= scroll_top && row <= scroll_bot ){
+                //wmove(proc, current_row - scroll_top + 1, 0);
+                wprintw( 
+                    proc, 
+                    "%3d | %5d            %.02f               %6.02f             %3i           %3i           %-35s       \n", 
+                    row, element->pid, usage, s->stat.current.ramUsage, s->stat.current.priority, s->stat.current.nice, element->name
+                );
+               
+                wrefresh(proc);
+            }
 
             aux = aux->next;
-
-            cnt++;
-
+            row++;
         }
+        
+        
         sleep( SLEEP_INTERVAL );
-        scrollok(win2,FALSE);
-        wrefresh(win2);
-
         PidListfree( &head );
     }
+
 
 }
 void draw_cmd_window(WINDOW* win3) {
@@ -137,6 +158,7 @@ void draw_cmd_window(WINDOW* win3) {
 }
 
 
+
 int main() {
 
     // Initialize ncurses
@@ -150,51 +172,60 @@ int main() {
 
 
     // create info window
-    WINDOW* cmd = newwin(CMD_WIN_HEIGHT,CMD_WIN_WIDTH,0 ,0);
-    WINDOW* proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH,8, 0);
-   
-
-    box(proc,0,0);
-    box(cmd,0,0);
-
-    
-    wrefresh(proc);
-    wrefresh(cmd);
+    cmd = newwin(CMD_WIN_HEIGHT, CMD_WIN_WIDTH, 0 ,0);
+    proc_head = newwin(PROC_WIN_HEAD_HEIGHT, PROC_WIN_HEAD_WIDTH, CMD_WIN_HEIGHT, 0);
+    proc = newwin(PROC_WIN_HEIGHT, PROC_WIN_WIDTH, CMD_WIN_HEIGHT + PROC_WIN_HEAD_HEIGHT, 0);
 
     // Enable scrolling on proc window
     scrollok(proc, TRUE);
+   
+   
 
+    box(proc_head,0,0);
+    box(proc,0,0);
+    box(cmd,0,0);
+    
+    wrefresh(proc_head);
+    wrefresh(proc);
+    wrefresh(cmd);
+    
     // create threads for info window, process window, and command windowq
     pthread_t proc_thread, cmd_thread;
     
-    pthread_create(&proc_thread, NULL,(void*) draw_proc_window,(void*) proc);
-    pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window,(void*) cmd);
-
-    // Handle mouse events
-    // MEVENT event;
-    // while (1) {
-    //     int ch = getch();
-    //     if (ch == KEY_MOUSE) {
-    //         if (getmouse(&event) == OK) {
-    //             if (event.bstate & BUTTON4_PRESSED) {
-    //                 // Scroll up
-    //                 wscrl(proc, -1);
-    //             } else if (event.bstate & BUTTON5_PRESSED) {
-    //                 // Scroll down
-    //                 wscrl(proc, 1);
-    //             }
-    //             wrefresh(proc);
-    //         }
-    //     }
-    // }
+    pthread_create(&proc_thread, NULL,(void*) draw_proc_window, NULL);
+    //pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window,(void*) cmd);
 
 
-    // wait for threads to finish
+    // Handle user input
+    int ch;
+    int scrollAmt = PROC_WIN_HEIGHT;
+    while( (ch = getch()) != KEY_F(1)  ){
+        switch (ch) {
+            case KEY_UP:
+                if (current_row > 0) {
+                    current_row -= scrollAmt;
+                }
+                if (current_row < scroll_top) {
+                    scroll_top -= scrollAmt;
+                    scroll_bot -= scrollAmt;
+                }
+                break;
+            case KEY_DOWN:
+                current_row += scrollAmt;
+                if (current_row > scroll_bot) {
+                    scroll_top += scrollAmt;
+                    scroll_bot += scrollAmt;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    // Handle user input
+    
+
+
     pthread_join(cmd_thread, NULL);
-
-
-   
-
     endwin();
     return 0;
 }
