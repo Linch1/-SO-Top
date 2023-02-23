@@ -114,17 +114,22 @@ PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid ){
         stat.status = 1;
     }
 
-    PidStat* new_stat= (PidStat*) calloc( 1, sizeof(PidStat) );
-    new_stat->current = stat;
+    PidStat new_stat;
+    new_stat.current = stat;
 
 
     PidStatListItem* new_element = (PidStatListItem*) calloc(1, sizeof(PidStatListItem));
     new_element->pid = pid;
-    new_element->stat = *new_stat;
+    new_element->stat = new_stat;
+
 
     ListItem* result= List_insert( head, head->last, (ListItem*) new_element);
     assert(result);
 
+    
+
     return new_element;
 }
+
+
 

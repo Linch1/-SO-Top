@@ -89,12 +89,9 @@ void render_processes(){
             } else {
                 stat.status = 1;
             }
-            pstat tmp = s->stat.prev;
             s->stat.prev = s->stat.current;
             s->stat.current = stat;
-            if( tmp.status != 0 ){
-                free((void*)&tmp);
-            }
+           
             
         }
 
