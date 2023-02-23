@@ -7,10 +7,11 @@
 #include <ctype.h>
 #include <assert.h>
 #include <pthread.h>
+#include <signal.h>
+#include <errno.h>
 #include "linked_list.h"
 #include "pid_stats.h"
 #include "pid_info.h"
-#include "pid_cmd.h"
 #include <sys/ioctl.h>
 
 #define CMD_WIN_HEIGHT 10
@@ -40,8 +41,12 @@ int scroll_bot = PROC_WIN_HEIGHT - 1;
 char cmd_prompted[256];
 int  cmd_prompted_len = 0;
 
+char error_prompted[256];
+int error_prompted_len=0;
+
 ListHead *current_processes_list_head;
 ListHead *processes_stats;
+
 
 void PidListfree(ListHead* head) {
   ListItem* aux=head->first;
@@ -144,9 +149,9 @@ void draw_proc_window(){
             mem.Total,mem.Free,mem.Avail,mem.Cache,mem.Used,swap.Total,swap.Free,swap.Used
         );
         mvwprintw(
-            1, 25,
-            proc_head, 
-            "N   | PID       |      CPU        |         MEM         |     PRIO      |    NICE      |      NAME     "
+            proc_head,
+            3, 27, 
+            "N |    PID     |      CPU        |         MEM         |    PRIO      |    NICE      |  NAME     "
         );
         wattroff(proc_head,COLOR_PAIR(1));
         wrefresh(proc_head);
@@ -161,8 +166,7 @@ void draw_proc_window(){
 
 
 }
-
-
+//Prompt 
 draw_init_cmd_window(){
     wclear(cmd);
     box(cmd, 0, 0);
@@ -171,17 +175,37 @@ draw_init_cmd_window(){
     mvwprintw(cmd,3,25, "Premendo h potrai vedere le funzioni eseguibili");
     mvwprintw(cmd,4,25, "Premendo q potrai uscire dal programma");
     mvwprintw(cmd,6,25, cmd_prompted);
+    mvwprintw(cmd,8,25,error_prompted);
     wattroff(cmd,COLOR_PAIR(1));
     wrefresh(cmd);
 }
+
 void h(){
     draw_init_cmd_window();
     mvwprintw( cmd, 6,25,"s: suspend  ||  r: resume || t: terminate || k: kill || q: quit");
     wrefresh(cmd);
 }
+
+static void check_error(WINDOW* cmd,long res, char* msg, int proc) {
+    if (res != -1) {
+        sprintf(error_prompted,"Il Processo PID( %d ) %s con successo",proc, msg);
+        draw_init_cmd_window();
+    }else{
+        switch (errno){
+                case EPERM: { 
+                            sprintf(error_prompted,"Non hai il permesso di %s il processo PID( %d ) ", msg ,proc);
+                            draw_init_cmd_window();
+                            break;}
+                case ESRCH: {
+                            sprintf(error_prompted,"Il Processo PID( %d ) non esiste ",proc);
+                            draw_init_cmd_window();
+                            break;}
+        }
+    }
+}
+
 void draw_cmd_window() {
     init_pair(1,COLOR_GREEN, COLOR_BLACK);  //COLORI PER MESSAGGIO STATICO
-
     char fun;
     int  pid;
     
@@ -207,16 +231,18 @@ void draw_cmd_window() {
 
                 cmd_prompted_len = 0;
                 cmd_prompted[0] = '\0';
+                error_prompted_len = 0;
+                error_prompted[0] = '\0'; 
                 switch (fun){
                     case 'h': h();
                         break;
-                    case 't': t(cmd,pid);
+                    case 't': check_error(cmd,kill(pid,SIGTERM),"terminate",pid);
                         break;
-                    case 'k': k(cmd,pid);
+                    case 'k': check_error(cmd,kill(pid,SIGKILL),"kill",pid);
                         break;
-                    case 'r': r(cmd,pid);
+                    case 'r': check_error(cmd,kill(pid,SIGCONT),"resume",pid);
                         break;
-                    case 's': su(cmd,pid);
+                    case 's': check_error(cmd,kill(pid,SIGSTOP),"suspend",pid);
                         break;
                     case 'q':
                         system("clear");
@@ -231,7 +257,7 @@ void draw_cmd_window() {
                 
                 
             } else {
-
+                
                 if (ch == KEY_BACKSPACE || ch == 127) {
                     if (cmd_prompted_len > 0) {
                         cmd_prompted_len--;
@@ -242,8 +268,8 @@ void draw_cmd_window() {
                     cmd_prompted_len++;
                     cmd_prompted[cmd_prompted_len] = '\0';
                 }
-
                 draw_init_cmd_window();
+                
 
             }
     }
