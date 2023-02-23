@@ -15,7 +15,7 @@ void getMemory(struct Memory* mem){
     FILE *f=fopen("/proc/meminfo", "r");
     if (f == NULL) {
         perror("FOPEN ERROR 4");
-        fclose(f);
+        //fclose(f);
         return exit(-1);
     }
 
@@ -38,7 +38,7 @@ void getSwap(struct Swap* swap){
     FILE *f=fopen("/proc/meminfo", "r");
     if (f == NULL) {
         perror("FOPEN ERROR 5");
-        fclose(f);
+        //fclose(f);
         exit(-1);
     }
 
@@ -80,7 +80,7 @@ float getRamUsage(long proc_rss) {
     FILE *fp = fopen("/proc/meminfo", "r");
     if (fp == NULL) {
         perror("FOPEN ERROR 6");
-        fclose(fp);
+        //fclose(fp);
         exit(-1);
     }
 
@@ -114,15 +114,15 @@ int getPidStats(const pid_t pid, struct pstat* result) {
 
     FILE *fpstat = fopen(stat_filepath, "r");
     if (fpstat == NULL) {
-        perror("FOPEN ERROR 1");
-        fclose(fpstat);
+        printf("[process %d end]\n", pid); // FOPEN ERROR 1. 
+        //fclose(fpstat);
         return -1;
     }
 
     FILE *fstat = fopen("/proc/stat", "r");
     if (fstat == NULL) {
         perror("FOPEN ERROR 2");
-        fclose(fstat);
+        //fclose(fstat);
         return -1;
     }
 

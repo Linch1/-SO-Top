@@ -1,0 +1,23 @@
+==147656== Memcheck, a memory error detector
+==147656== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==147656== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==147656== Command: ./prova_fin
+==147656== Parent PID: 139144
+==147656== 
+==147656== Thread 2:
+==147656== Invalid free() / delete / delete[] / realloc()
+==147656==    at 0x483CA3F: free (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==147656==    by 0x10AAC1: render_processes (main.c:96)
+==147656==    by 0x10ADFD: draw_proc_window (main.c:181)
+==147656==    by 0x48C5608: start_thread (pthread_create.c:477)
+==147656==    by 0x49FF162: clone (clone.S:95)
+==147656==  Address 0x56dce00 is on thread 2's stack
+==147656==  in frame #1, created by render_processes (main.c:67)
+==147656== 
+==147656== Thread 3:
+==147656== Syscall param kill(pid) contains uninitialised byte(s)
+==147656==    at 0x492340B: kill (syscall-template.S:78)
+==147656==    by 0x10B292: draw_cmd_window (main.c:265)
+==147656==    by 0x48C5608: start_thread (pthread_create.c:477)
+==147656==    by 0x49FF162: clone (clone.S:95)
+==147656== 

@@ -8,10 +8,10 @@ TARGET = prova_fin
 .PHONY: all clean
 
 all: $(TARGET)
+	$(MAKE) clean && echo "Compilation successful."
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	echo "lavo"
-	rm -rf *.o *~ $(OBJ) $(TARGET)
+	rm -rf *.o *~ $(OBJ)

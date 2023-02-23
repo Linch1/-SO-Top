@@ -69,7 +69,7 @@ int getRunningPids( ListHead* head ) {
         fp = fopen(path, "r");
         if (fp == NULL) {
             perror("FOPEN ERROR 3");
-            fclose(fp);
+            //fclose(fp);
             continue;
         }
 
@@ -114,8 +114,7 @@ PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid ){
         stat.status = 1;
     }
 
-    PidStat* new_stat= (PidStat*)
-    malloc( sizeof(PidStat) );
+    PidStat* new_stat= (PidStat*) calloc( 1, sizeof(PidStat) );
     new_stat->current = stat;
 
 

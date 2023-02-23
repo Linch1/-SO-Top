@@ -13,6 +13,7 @@
 #include "pid_stats.h"
 #include "pid_info.h"
 #include <sys/ioctl.h>
+#include <semaphore.h>
 
 #define CMD_WIN_HEIGHT 10
 #define CMD_WIN_WIDTH 170
@@ -22,6 +23,8 @@
 #define PROC_WIN_WIDTH 170
 
 #define SLEEP_INTERVAL 2
+
+sem_t sem;
 
 
 WINDOW* cmd;
@@ -48,23 +51,30 @@ ListHead *current_processes_list_head;
 ListHead *processes_stats;
 
 
+
 void PidListfree(ListHead* head) {
-  ListItem* aux=head->first;
-  while(aux){
-    ListItem* tmp = aux->next;
-    free(((PidListItem*)aux)->name);
-    free(aux);
-    aux = tmp;
-  }
+    sem_wait( &sem );
+    ListItem* aux=head->first;
+    while(aux){
+        ListItem* tmp = aux->next;
+        free(((PidListItem*)aux)->name);
+        free(aux);
+        aux = tmp;
+    }
+    sem_post( &sem );
 }
 
 void render_processes(){
+
+    
+
     ListItem* aux= current_processes_list_head -> first;
     int row=5;
     int render_row = 1;
 
     processes_max_page = (current_processes_list_head ->size)/scrollAmt;
     
+    sem_wait( &sem );
     while(aux) {
         PidListItem* element = (PidListItem*) aux;
         PidStatListItem* s = PidListStat_find( processes_stats, element->pid);
@@ -74,13 +84,18 @@ void render_processes(){
             continue;
         } else {
             pstat stat;
-            if( getPidStats(element->pid, &stat) == -1 ){
+            if( getPidStats(element->pid, &stat) == -1 ){ // process was killed
                 stat.status = -1;
             } else {
                 stat.status = 1;
             }
+            pstat tmp = s->stat.prev;
             s->stat.prev = s->stat.current;
             s->stat.current = stat;
+            if( tmp.status != 0 ){
+                free((void*)&tmp);
+            }
+            
         }
 
         double usage = -1;
@@ -90,6 +105,9 @@ void render_processes(){
 
         int first = processes_page * scrollAmt;
         int last = first + scrollAmt;
+        
+        
+        
         if ( row >= first && row <= last ){
             //wmove(proc, current_row - scroll_top + 1, 0);
             if( s->stat.current.status != -1 ){
@@ -116,7 +134,7 @@ void render_processes(){
         aux = aux->next;
         row++;
     }
-        
+    sem_post( &sem );    
         
     //wclear(proc);
 }
@@ -130,6 +148,8 @@ void draw_proc_window(){
     Swap swap;
     
     while(i==0){
+
+        
 
         ListHead head;
         current_processes_list_head = &head;
@@ -280,6 +300,9 @@ void draw_cmd_window() {
 
 int main() {
 
+    // intialize sem
+    sem_init( &sem, 0, 1);
+
     // Initialize ncurses
     initscr();
     cbreak();
@@ -296,7 +319,6 @@ int main() {
     // Enable scrolling on proc window
     scrollok(proc, TRUE);
    
-   
 
     box(proc_head,0,0);
     box(proc,0,0);
@@ -312,8 +334,11 @@ int main() {
     pthread_create(&proc_thread, NULL,(void*) draw_proc_window, NULL);
     pthread_create(&cmd_thread, NULL,(void*) draw_cmd_window, NULL);
 
+    sleep(1);
+    draw_init_cmd_window();
 
     pthread_join(cmd_thread, NULL);
     endwin();
+    sem_destroy( &sem );
     return 0;
 }
