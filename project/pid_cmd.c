@@ -35,14 +35,7 @@ static void check_error(WINDOW* win,long res, char* msg, int proc) {
     }
 }
 
-void h(WINDOW* win){
-    wrefresh(win);
-    wmove(win, 5, 1);
-    wclrtoeol(win);
-    mvwprintw(win,5,1,"s: suspend  ||  r: resume || t: terminate || k: kill || q: quit");
-    wmove(win, 6, 1);
-    wclrtoeol(win);
-}
+
 
 void t(WINDOW* win,int pid){
     check_error(win,kill(pid,SIGTERM),"terminate",pid);

@@ -14,8 +14,7 @@ typedef struct Swap{
     int Used;
 }Swap;
 
-float getSystemUptimeSec();
-float getTotalCpuUsage( float uptime_sec, pstat stat );
+
 void getMemory(struct Memory* mem);
 void getSwap(struct Swap* swap);
 void printPidStats( struct pstat stats );

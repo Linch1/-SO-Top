@@ -67,9 +67,9 @@ int getRunningPids( ListHead* head ) {
         // Try to open /proc/<PID>/stat.
         snprintf(path, sizeof(path), "/proc/%s/stat", entry->d_name);
         fp = fopen(path, "r");
-
-        if (!fp) {
-            perror(path);
+        if (fp == NULL) {
+            perror("FOPEN ERROR 3");
+            fclose(fp);
             continue;
         }
 
@@ -107,8 +107,12 @@ int getRunningPids( ListHead* head ) {
 
 PidStatListItem* intializeProcessStats( ListHead *head, pid_t pid ){
     pstat stat;
-    getPidStats( pid, &stat );
-
+    
+    if( getPidStats( pid, &stat ) == -1 ){
+        stat.status = -1;
+    } else {
+        stat.status = 1;
+    }
 
     PidStat* new_stat= (PidStat*)
     malloc( sizeof(PidStat) );

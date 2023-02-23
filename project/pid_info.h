@@ -17,6 +17,8 @@ typedef struct pstat {
     int nice;
     long unsigned int cpu_total_time; //
     long unsigned int start_time_ticks; // orario di avvio processo
+
+    int status; // false if invalid stat
 } pstat;
 
 typedef struct PidStat {

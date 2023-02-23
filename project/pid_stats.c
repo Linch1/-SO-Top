@@ -9,25 +9,15 @@
 #include <unistd.h>
 #define SC_CLK_TCK 2
 
-float getSystemUptimeSec(){
-    // Try to open /proc/uptime.
-    char path = "/proc/uptime"; 
-    float uptime_sec, b;
-    FILE *fp = fopen("/proc/uptime", "r");
-    fscanf(fp, "%f %f", &uptime_sec, &b);
-    return uptime_sec;
-}
-float getTotalCpuUsage( float uptime_sec, pstat stat ){
-    float total_time = stat.utime_ticks + stat.stime_ticks; // time_spent_in_user_mode + time_spent_in_kernel_mode from process
-    total_time+= stat.cutime_ticks + stat.cstime_ticks; // time spent in cpu from children processes
-    long CLOCKS = sysconf(SC_CLK_TCK);
-    float process_run_for_seconds = uptime_sec - (stat.start_time_ticks/CLOCKS);
-    float cpu_usage = 100 * ( (total_time / CLOCKS) / process_run_for_seconds );
-    return cpu_usage;
-}
+
 void getMemory(struct Memory* mem){
 
     FILE *f=fopen("/proc/meminfo", "r");
+    if (f == NULL) {
+        perror("FOPEN ERROR 4");
+        fclose(f);
+        return exit(-1);
+    }
 
     char buff[256];
     while(fgets(buff, sizeof(buff), f)){
@@ -46,6 +36,12 @@ void getMemory(struct Memory* mem){
 void getSwap(struct Swap* swap){
 
     FILE *f=fopen("/proc/meminfo", "r");
+    if (f == NULL) {
+        perror("FOPEN ERROR 5");
+        fclose(f);
+        exit(-1);
+    }
+
 
     char buff[256];
     while(fgets(buff, sizeof(buff), f)){
@@ -82,6 +78,12 @@ float getRamUsage(long proc_rss) {
     // get total memoory
     long sys_mem_total;
     FILE *fp = fopen("/proc/meminfo", "r");
+    if (fp == NULL) {
+        perror("FOPEN ERROR 6");
+        fclose(fp);
+        exit(-1);
+    }
+
     char buffer[256];
     int matched_meminfo = 0;
     while (fgets(buffer, sizeof(buffer), fp)) {
@@ -112,13 +114,14 @@ int getPidStats(const pid_t pid, struct pstat* result) {
 
     FILE *fpstat = fopen(stat_filepath, "r");
     if (fpstat == NULL) {
-        perror("FOPEN ERROR ");
+        perror("FOPEN ERROR 1");
+        fclose(fpstat);
         return -1;
     }
 
     FILE *fstat = fopen("/proc/stat", "r");
     if (fstat == NULL) {
-        perror("FOPEN ERROR ");
+        perror("FOPEN ERROR 2");
         fclose(fstat);
         return -1;
     }
