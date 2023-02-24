@@ -51,7 +51,7 @@ ListHead *current_processes_list_head;
 ListHead *processes_stats;
 
 
-
+// MATTEO
 void PidListfree(ListHead* head) {
     sem_wait( &sem );
     ListItem* aux=head->first;
@@ -63,7 +63,7 @@ void PidListfree(ListHead* head) {
     }
     sem_post( &sem );
 }
-
+//MATTEO
 void render_processes(){
 
     
@@ -135,6 +135,7 @@ void render_processes(){
         
     //wclear(proc);
 }
+//MARCO
 void draw_proc_window(){
     ListHead headStats;
     processes_stats = &headStats; 
@@ -183,7 +184,7 @@ void draw_proc_window(){
 
 
 }
-//Prompt 
+//MARCO
 draw_init_cmd_window(){
     wclear(cmd);
     box(cmd, 0, 0);
@@ -196,13 +197,13 @@ draw_init_cmd_window(){
     wattroff(cmd,COLOR_PAIR(1));
     wrefresh(cmd);
 }
-
+//MARCO
 void h(){
     draw_init_cmd_window();
     mvwprintw( cmd, 6,25,"s: suspend  ||  r: resume || t: terminate || k: kill || q: quit");
     wrefresh(cmd);
 }
-
+//MARCO
 static void check_error(WINDOW* cmd,long res, char* msg, int proc) {
     if (res != -1) {
         sprintf(error_prompted,"Il Processo PID( %d ) %s con successo",proc, msg);
@@ -220,7 +221,7 @@ static void check_error(WINDOW* cmd,long res, char* msg, int proc) {
         }
     }
 }
-
+//MARCO
 void draw_cmd_window() {
     init_pair(1,COLOR_GREEN, COLOR_BLACK);  //COLORI PER MESSAGGIO STATICO
     char fun;
@@ -294,7 +295,7 @@ void draw_cmd_window() {
 }
 
 
-
+//MATTEO MARCO
 int main() {
 
     // intialize sem

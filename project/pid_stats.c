@@ -9,7 +9,7 @@
 #include <unistd.h>
 #define SC_CLK_TCK 2
 
-
+//SEZIONE MARCO
 void getMemory(struct Memory* mem){
 
     FILE *f=fopen("/proc/meminfo", "r");
@@ -33,6 +33,7 @@ void getMemory(struct Memory* mem){
     
     if(fclose(f) != 0) exit(-1);
 }
+
 void getSwap(struct Swap* swap){
 
     FILE *f=fopen("/proc/meminfo", "r");
@@ -53,24 +54,6 @@ void getSwap(struct Swap* swap){
 
     if(fclose(f) != 0) exit(-1);
 }
-
-void calc_cpu_usage_pct(const struct pstat* cur_usage,
-                        const struct pstat* last_usage,
-                        double* usage)
-{
-    const long unsigned int pid_diff =
-        ( cur_usage->utime_ticks + cur_usage->stime_ticks ) -
-        ( last_usage->utime_ticks + last_usage->stime_ticks );
-
-    *usage = 1/(float)SLEEP_INTERVAL * pid_diff;
-}
-void printPidStats( struct pstat stats ){
-    printf(
-        "utime_ticks: %d | cutime_ticks: %d | stime_ticks: %d | cstime_ticks: %d | vsize: %d | rss: %d | cpu_total_time: %d \n",
-        stats.utime_ticks, stats.cutime_ticks, stats.stime_ticks, stats.cstime_ticks, stats.vsize, stats.rss, stats.cpu_total_time
-    );
-}
-
 
 float getRamUsage(long proc_rss) {
    
@@ -98,6 +81,26 @@ float getRamUsage(long proc_rss) {
 
     return ram_usage;
 }
+
+// SEZIONE MATTEO
+void calc_cpu_usage_pct(const struct pstat* cur_usage,
+                        const struct pstat* last_usage,
+                        double* usage)
+{
+    const long unsigned int pid_diff =
+        ( cur_usage->utime_ticks + cur_usage->stime_ticks ) -
+        ( last_usage->utime_ticks + last_usage->stime_ticks );
+
+    *usage = 1/(float)SLEEP_INTERVAL * pid_diff;
+}
+void printPidStats( struct pstat stats ){
+    printf(
+        "utime_ticks: %d | cutime_ticks: %d | stime_ticks: %d | cstime_ticks: %d | vsize: %d | rss: %d | cpu_total_time: %d \n",
+        stats.utime_ticks, stats.cutime_ticks, stats.stime_ticks, stats.cstime_ticks, stats.vsize, stats.rss, stats.cpu_total_time
+    );
+}
+
+
 
 /*
  * read /proc data into the passed struct pstat

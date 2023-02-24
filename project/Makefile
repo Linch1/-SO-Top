@@ -3,7 +3,7 @@ CFLAGS = -w -g -Wall -Wextra -Werror -pedantic -std=c11
 LDFLAGS = -lncurses -pthread
 SRC = main.c pid_info.c pid_stats.c linked_list.c
 OBJ = $(SRC:.c=.o)
-TARGET = prova_fin
+TARGET = top
 
 .PHONY: all clean
 
